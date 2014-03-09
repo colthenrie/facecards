@@ -89,7 +89,11 @@ module.exports.init = function (passport, config, opts) {
     // Redirect the user to LdsConnect for authentication.  When complete,
     // LdsConnect will redirect the user back to the application at
     //   /auth/ldsconnect/callback
-    rest.get('/auth/ldsconnect', passport.authenticate('ldsconnect', { scope: ['email'] }));
+    rest.get('/auth/ldsconnect', passport.authenticate('ldsconnect', { scope:
+    // TODO shouldn't freak out with bad permissions
+    [ 'ward.adults:name,photo:::'
+    ]
+    }));
   }
 
   return route;

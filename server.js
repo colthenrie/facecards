@@ -37,6 +37,7 @@ function route(rest) {
 }
 
 app
+  .use(connect.logger())
   .use(function (req, res, next) {
       res.redirect = function (code, href) {
         if (!href) {
@@ -65,7 +66,7 @@ app
   .use(connect.urlencoded())
   .use(connect.compress())
   .use(connect.cookieParser())
-  .use(connect.session({ secret: 'fzzysnthbeeeeaith' }))
+  .use(connect.session({ secret: config.sessionSecret }))
   //.use(express.router)
   ;
   //route(app);
@@ -77,6 +78,7 @@ routes.forEach(function (fn) {
 
 app
   .use(connect.router(route))
+  .use(connect.router(require('./lib/ldsconnect').create(function (req) { return req.user.currentUser.accessToken; })))
   .use(connect.static(path.join(__dirname, 'data')))
   //.use(connect.static(path.join(__dirname, 'dist')))
   //.use(connect.static(path.join(__dirname, '.tmp', 'concat')))

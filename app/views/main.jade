@@ -1,56 +1,38 @@
-html
-  body
-    //-.jumbotron
-      h1 &apos;Allo&comma; &apos;Allo&excl;
-      p.lead
-        img(src='images/yeoman.png', alt='I"m Yeoman')
-        br
-        | Always a pleasure scaffolding your apps&period;
-      p
-        a.btn.btn-lg.btn-success(ng-href='#') Splendid&excl;
+.container
+  h3 Welcome to Facecards
+  div(ng-if="!M.session.currentLoginId")
+    p.
+      The idea here is quite straight-forward. You login with your LDS.org account and then
+      we'll grab the photos from your ward directory and create flashcards for you.
+    .option(ng-if="!M.message")
+      button.btn.btn-block.btn-social.btn-lg.btn-ldsconnect(type="button", ng-click="M.loginWithLds()")
+        i.fa
+          img(src="/images/moroni.png")
+        span.signin Sign In with LDS.org
+    
+  div(ng-if="M.session.currentLoginId")
+    .alert.alert-warning(ng-if="M.alertMsg") {{ M.alertMsg }}
+    .progress(ng-if="M.progress.message", ng-class="{ 'progress-striped': M.progress.progress, 'active': M.progress.progress }")
+      .progress-bar(
+        role="progressbar"
+      , aria-valuenow="{{ M.progress.progress }}"
+      , aria-valuemin="0"
+      , aria-valuemax="1000"
+      , style="width: {{ M.progress.progress }}%"
+      )
+        span.sr-only {{ M.progress.progress }}% Complete
+    div(ng-if="M.progress.message")
+      p {{ M.progress.message }}
 
-    .row.marketing
-      div(ng-if="!M.current && !M.results") 
-        button.btn.btn-primary(ng-click="M.startQuiz()", type="button") Find Your House
-        p.
-          You gotsta know your house!
+    .row(ng-if="M.card")
+      h4 Who is this?
+      .thumbnail
+        img(ng-src="{{M.card.photo}}")
 
-      div(ng-if="M.current")
-        span {{ M.current.total - M.current.remaining }} of {{ M.current.total }}
-        strong  Which suits you best?
-        span
-          |  (#
-          | {{ M.current.number }})
-        div
-          p(ng-repeat="choice in M.current.choices")
-            button.btn.btn-primary(ng-click="M.respond($index)", type="button") {{ $index + 1 }}
-            span  {{ choice.response }}
-      div(ng-if="M.result")
-        .section
-          h3
-            span Your house is
-            strong  {{ M.result }}
+      form(ng-submit="M.makeGuess()")
+        input.form-control(type="text", ng-model="M.guess", placeholder="i.e. John Doe", typeahead="name as card.name for card in M.cards | filter:{name:$viewValue} | orderBy:M.sortByName | limitTo:8", typeahead-editable="true", typeahead-on-select="M.makeGuess($item, $model, $label)", typeahead-min-length="0")
+        button.form-control.btn.btn-primary(type="submit") Guess
 
-          p Differential Confidence: {{ M.confidence1 }}%
-          p Average Confidence: {{ M.confidence2 }}%
-
-          div(ng-repeat="outcome in M.outcomes")
-            p(ng-if="M.result === outcome.name").
-              {{ outcome.message }}
-
-        .section
-          p Debug Totals:
-          pre {{ M.results | json }}
-
-          p Debug Responses:
-          pre {{ M.responses | json }}
-
-        .section
-          h3 More
-          p.
-            You're a Harry Potter fan. How exciting!
-
-        .section
-          h3 Welcome
-          p.
-            Welcome to your house. Way to be!
+    .row(ng-if="M.finished")
+      h3 You Finished. Huzzah!
+      button.form-control.btn.btn-primary(type="button", ng-click="M.playAgain()") Play Again?

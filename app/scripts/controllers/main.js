@@ -1,73 +1,132 @@
 'use strict';
 
 angular.module('sortinghatApp')
-  .controller('MainCtrl', function ($timeout, mySession, data) {
+  .controller('MainCtrl', function ($timeout, StSession, StLogin, mySession, StProgress, LdsConnect) {
     var $scope = this
-      , quiz
+      , shuffle = window.knuthShuffle
       ;
 
-    console.log('data');
-    console.log(data);
+    $scope.progress = StProgress.scope;
+    $scope.session = mySession;
+    $scope.guess = '';
 
-    $scope.data = data;
-
-    quiz = window.Quizomatic.create(data, { randomize: true });
-
-    $scope.outcomes = data.outcomes;
-
-    function presentQuestion(data) {
-      var current = data.current
-        , remaining = data.remaining
-        , total = data.total
-        ;
-
-      // TODO put at quiz level
-      $scope.total = total;
-
-      $scope.current = current;
-      $scope.current.remaining = remaining;
-      $scope.current.total = total;
-      $scope.current.question = current.question;
-      $scope.current.choices = current.choices;
+    function update(session) {
+      mySession = session;
+      $scope.session = session;
+      run();
     }
 
-    function interpretAnswer(num) {
-      quiz.respond(Number(num));
+    $scope.makeGuess = function (item, model, str) {
+      if (str) {
+        $scope.guess = str;
+      }
 
-      if (quiz.hasNext()) {
-        presentQuestion(quiz.next());
+      $scope.guess = $scope.guess || '';
+
+      console.log('guess', $scope.guess);
+
+      if ($scope.guess.toLowerCase() === $scope.card.name.toLowerCase()) {
+        $scope.cards.shift();
+        nextCard();
+      } else {
+        $scope.hint = $scope.card.name.substr(0, $scope.hint.length + 1);
+        $scope.guess = $scope.hint;
+      }
+    };
+
+    $scope.sortByName = function () {
+      // TODO sort by first name
+      return 0.5 - Math.random();
+    };
+
+    function nextCard() {
+      $scope.card = $scope.cards[0];
+      $scope.hint = '';
+      $scope.guess = '';
+      if (!$scope.card) {
+        // do something
+        $scope.finished = true;
+      }
+    }
+
+    $scope.playAgain = function () {
+      $scope.finished = false;
+      $scope.cards = $scope.allCards.slice(0);
+      shuffle($scope.cards);
+      nextCard();
+    };
+
+    function run() {
+      StProgress.start();
+      LdsConnect.init().then(function (me) {
+        console.log('me');
+        console.log(me);
+        LdsConnect.ward().then(function (info) {
+          console.log('info');
+          console.log(info);
+        });
+        LdsConnect.photos().then(function (roster) {
+          StProgress.stop();
+          console.log('roster');
+          console.log(roster);
+          $scope.cards = roster.map(function (card) {
+            return {
+              photo: card.headOfHousehold.imageData || card.householdInfo.imageData
+            , name: card.headOfHousehold.name.split(', ').reverse().join(' ')
+            , attempts: 0
+            };
+          }).filter(function (card) {
+            return card.photo;
+          });
+          shuffle($scope.cards);
+          $scope.allCards = $scope.cards.slice(0);
+          nextCard();
+        });
+      });
+    }
+
+    $scope.loginWithLds = function () {
+      if (mySession && mySession.accounts) {
+        StSession.update(mySession);
         return;
       }
 
-      saveResponses();
-    }
+      StProgress.scope.progress = 0;
+      StProgress.scope.message = 'Logging you in...';
+      StProgress.start();
 
-    function saveResponses() {
-      var responses = quiz.responses()
-        , totals = quiz.totals()
-        , sorted
-        ;
+      console.log('M.loginWithLds happening...');
+      $scope.loginScope.loginWithLds();
 
-      $scope.current = null;
-      $scope.results = totals;
-      $scope.responses = responses;
-
-      sorted = Object.keys(totals).sort(function (keyA, keyB) {
-        return totals[keyB] - totals[keyA];
-      });
-      $scope.result = sorted[0];
-      $scope.confidence1 =
-        (100 *
-          (totals[sorted[0]] - totals[sorted[1]])
-        / (totals[sorted[0]] + totals[sorted[1]])
-        ).toFixed(2);
-      $scope.confidence2 =
-        (100 * (totals[sorted[0]] / ($scope.total / (sorted.length/2)) )).toFixed(2);
-    }
-
-    $scope.startQuiz = function () {
-      presentQuestion(quiz.next());
+      $scope.loginTimeout = $timeout(function () {
+        $scope.alertMsg = "Hmm... this is taking much longer than expected. "
+          + "Perhaps it would be best to refresh the page and try again.";
+      }, 45 * 1000);
     };
 
-    $scope.respond = interpretAnswer;
+    $scope.loginScope = {};
+    StLogin.makeLogin($scope.loginScope, 'lds', '/auth/ldsconnect', function (err, session) {
+      StProgress.stop();
+      $timeout.cancel($scope.loginTimeout);
+      console.log('M.loginWithLds happened!');
+      if (err) {
+        console.error(err);
+        if (/Access Denied/.test(err)) {
+          // prevent bug caused by alert where $scope.message doesn't update
+          $timeout(function () {
+            window.alert("You denied us? Ouch... well, see ya later... (or try again if it was an accident)");
+          });
+        } else {
+          window.alert("Login failed. Sorry about that. You probably used the wrong username / password");
+        }
+        return;
+      }
+      StSession.update(session);
+    });
+
+    StSession.subscribe(update);
+
+    if (mySession && mySession.currentLoginId) {
+      run();
+    }
   });

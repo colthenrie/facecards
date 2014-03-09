@@ -1,6 +1,7 @@
 module.exports = {
   protocol: 'http'
 , host: 'local.foobar3000.com:9003'
+, sessionSecret: 'something super secret'
 , facebook: {
     // https://developers.facebook.com/apps
     id: 'XXX'

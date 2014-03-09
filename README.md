@@ -1,11 +1,13 @@
-angular-project-template
+YSA Tools Facecards
 ============
+
+<http://facecards.org>
 
 Install
 ===
 
 ```bash
-git clone https://github.com/coolaj86/angular-project-template.git
+git clone https://github.com/YSATools/facecards.git
 pushd angular-project-template/
 
 npm install -g yo
@@ -17,8 +19,8 @@ bower install
 
 grunt build --force
 
-echo '{}' > data/accounts.priv.json
-echo '{}' > data/users.priv.json
+echo '{}' > db/accounts.priv.json
+echo '{}' > db/users.priv.json
 ```
 
 Use
