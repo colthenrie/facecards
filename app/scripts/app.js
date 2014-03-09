@@ -88,6 +88,16 @@ angular.module('sortinghatApp', [
         , footer: footer
         }
       })
+      .state('print', {
+        url: '/coming-soon/'
+      , views: {
+          nav: nav
+        , body: {
+            templateUrl: 'views/print.html'
+          }
+        , footer: footer
+        }
+      })
       .state('about', {
         url: '/about/'
       , views: {

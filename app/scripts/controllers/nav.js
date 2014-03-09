@@ -24,6 +24,10 @@ angular.module('sortinghatApp')
       , title: 'Home'
       , href: $state.href('root')
       }
+    , { active: $state.includes('print')
+      , title: 'Coming Soon'
+      , href: $state.href('print')
+      }
     , { active: $state.includes('about')
       , title: 'About'
       , href: $state.href('about')
